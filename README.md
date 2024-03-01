@@ -1,9 +1,10 @@
-# Crossword Automatic Creation - V0
+# Crossword Automatic Creation
 
-## Run program:
+## Run program
 - Add words in `mylist.txt`.
 - Run `make` (or `make debug`)
-- Run `./crosswordGen width length` to get the result according to the grid size given by `width` and `length`. Falling back to (8 x 8) grid size by default.
+- Run `./crosswordGen width length` to get the result according to the grid size given by `width` and `length`. 
+__Falling back to (8 x 8) grid size by default.__
 
 ### Hard-coded Limits:
 `#define MAXGRIDSIDESIZE 32`: make sure the user is not asking for an impossible task.
