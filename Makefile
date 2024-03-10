@@ -13,6 +13,8 @@ all: crosswordgen_print crosswordgen unittest runtest
 debug: CXXFLAGS += ${DEBUGFLAGS}
 debug: all
 
+perf: crosswordgen_print crosswordgen performance perf-test
+
 crosswordgen_print:
 	@echo "Crossword Gen Compilation..."
 
@@ -24,9 +26,17 @@ unittest: ./test/unittest.cpp
 	@echo "- Compilation unittest.cpp..."
 	${CXX} ${CXXFLAGS} -o unittest -g $<
 
+performance: ./test/perf.cpp
+	@echo "- Compilation perf.cpp..."
+	${CXX} ${CXXFLAGS} -o perf -g $<
+
 runtest:
 	@echo "- Check compilation..."
 	./unittest
+
+perf-test:
+	@echo "- Performance test"
+	./perf
 
 clean:
 	@echo "Cleaning files."

@@ -18,7 +18,7 @@ public:
     // Crossword main solver functions
     void run(const bool appCall = false);
     void fillBlank();
-    // internal functions
+    // Internal functions
     unsigned prune(std::shared_ptr<Graph> crosswordMaps, const unsigned topN = 3); // [HEURI-3]
     std::vector<WordPlace> getBestSolution(std::shared_ptr<Graph> crosswordMaps, const unsigned minimumTopSolution);
     unsigned getMinimumTopN(std::shared_ptr<Graph> crosswordMaps, std::vector<unsigned>& vectTopN, const unsigned topN = 3);
@@ -27,12 +27,15 @@ public:
     bool iteratePosition(const unsigned sizeWord, Position& currentPos);
     void addWordGraph(const std::string word, std::shared_ptr<Graph> crosswordMaps);
     void addWordNode(const std::string word, std::shared_ptr<Graph> crosswordMaps);
+    void createNewGraphNode(std::shared_ptr<Graph> crosswordMaps, const GridMap& newGridMap, const unsigned nbCrossing);
+    // Debug
     void printGraph(std::shared_ptr<Graph> graph, const unsigned topN = 0);
     void printCrosswordMap(GridMap* node);
+    // Heuristics
     unsigned computeScore(unsigned score, unsigned nbCrossing);
 private:
     // [IMPROV-0] English dictionary
-    std::vector<std::string> dict; // tdb
+    std::vector<std::string> dict; // tbd
     // unique id per node
     static inline std::atomic<int> nextId{0};
 };
@@ -59,6 +62,16 @@ void CrosswordGen::addWordsFromFile(){
     // readWordsFile("./english-dict/ukenglish.txt", dict);
 }
 
+void CrosswordGen::createNewGraphNode(std::shared_ptr<Graph> crosswordMaps, const GridMap& newGridMap, const unsigned nbCrossing){
+    // Graph node
+    Graph newNode;
+    newNode.unique_id   = this->nextId++;
+    newNode.currentNode = newGridMap;
+    newNode.score       = computeScore(crosswordMaps->score, nbCrossing);
+    newNode.parent      = crosswordMaps;
+    crosswordMaps->children.push_back(std::make_shared<Graph>(newNode));
+}
+
 void CrosswordGen::addWordNode(const std::string word, std::shared_ptr<Graph> crosswordMaps){
     // TODO:
     // - [IMPROV-1] add overlapping features => check that an overlap can make a valid new word for the line above and underneath (add options)
@@ -69,7 +82,8 @@ void CrosswordGen::addWordNode(const std::string word, std::shared_ptr<Graph> cr
     }
     // - [IMPROV-2] Optimized matrix traversal
     for (unsigned x = 0; x < gridInfo.length; x++){
-        for (unsigned y  = 0; y < gridInfo.width; y++){
+        // Optimised matrix traversal
+        for (unsigned y  = 0; y < (x <= (gridInfo.length - sizeWord) ? gridInfo.width : gridInfo.width - sizeWord + 1); y++){
             // Can I place vertically ?
             bool verticalClash   = (sizeWord + y > gridInfo.width);
             // Can I place horizontally ?
@@ -94,7 +108,7 @@ void CrosswordGen::addWordNode(const std::string word, std::shared_ptr<Graph> cr
                 */
                 if (placedWord.is_horizontal) { // placedWord.startPos.y == placedWord.endPos.y
                     assert(placedWord.startPos.y == placedWord.endPos.y);
-                    // [IMPROV-1] overlapping on the same line, the line above, the line underneath
+                    // [IMPROV-1] overlapping on the same line, the line above, the line underneath (try to avoid this situation at the moment).
                     horizontalClash     |= (isInsideInterval(y, placedWord.startPos.y - 1, placedWord.startPos.y + 1) && (isInsideInterval(x, placedWord.startPos.x, placedWord.endPos.x) || isInsideInterval(x+sizeWord, placedWord.startPos.x, placedWord.endPos.x) || (x < placedWord.startPos.x && (x+sizeWord) > placedWord.endPos.x)));
                     // Intersection clash checking
                     // clash without direct crossing
@@ -119,26 +133,14 @@ void CrosswordGen::addWordNode(const std::string word, std::shared_ptr<Graph> cr
             if (!horizontalClash){
                 // add new word in gridmap of the current node
                 GridMap newGridMap = currentNode;
-                WordPlace newWord{word, {x,y}, {x+sizeWord-1, y}, true};
-                newGridMap.wordsMap.push_back(newWord);
-                Graph newNode;
-                newNode.unique_id   = this->nextId++;
-                newNode.currentNode = newGridMap;
-                newNode.score       = computeScore(crosswordMaps->score, nbHorizCrossing);
-                newNode.parent      = crosswordMaps;
-                crosswordMaps->children.push_back(std::make_shared<Graph>(newNode));
+                newGridMap.wordsMap.push_back({word, {x,y}, {x+sizeWord-1, y}, true});
+                createNewGraphNode(crosswordMaps, newGridMap, nbHorizCrossing);
             }
             if (!verticalClash){
                 // add new word in gridmap of the current node
                 GridMap newGridMap = currentNode;
-                WordPlace newWord{word, {x,y}, {x, y+sizeWord-1}, false};
-                newGridMap.wordsMap.push_back(newWord);
-                Graph newNode;
-                newNode.unique_id   = this->nextId++;
-                newNode.currentNode = newGridMap;
-                newNode.score       = computeScore(crosswordMaps->score, nbVertCrossing);
-                newNode.parent      = crosswordMaps;
-                crosswordMaps->children.push_back(std::make_shared<Graph>(newNode));
+                newGridMap.wordsMap.push_back({word, {x,y}, {x, y+sizeWord-1}, false});
+                createNewGraphNode(crosswordMaps, newGridMap, nbVertCrossing);
             }
         }
     }
