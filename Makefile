@@ -40,4 +40,4 @@ perf-test:
 
 clean:
 	@echo "Cleaning files."
-	rm -rf *.dSYM crosswordgen unittest perf
+	rm -rf *.dSYM *.bkp crosswordgen unittest perf
