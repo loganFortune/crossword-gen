@@ -4,7 +4,7 @@ This file aims to give some details about the internal mechanism (or high-level 
 
 ## Internal mechanism
 
-TBD - Insert high-level diagram of the strategy.
+![Internal Algorithm Mechanism](./crosswordgen.png)
 
 ## Internal database
 
