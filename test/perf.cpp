@@ -16,7 +16,7 @@ unsigned testyxz(const unsigned width, const unsigned length, const std::vector<
         std::cout << "[testyxz] config: Grid(" << width << "," << length << ") with " << words.size() << " words to fit." << std::endl;
     }
     GridSize gridSize{width,length};
-    CrosswordGen CrosswordGen(gridSize, true);
+    CrosswordGen CrosswordGen(gridSize, TEST_PERF_INPUT);
     // Impossible to put in the grid
     for(auto& w: words){
         CrosswordGen.wordsList.push_back(w);

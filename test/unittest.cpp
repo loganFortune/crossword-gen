@@ -18,7 +18,7 @@ void test5x5(){
     */
     std::cout << "[test5x5]";
     GridSize gridSize{5,5};
-    CrosswordGen CrosswordGen(gridSize, true);
+    CrosswordGen CrosswordGen(gridSize, TEST_PERF_INPUT);
     // Impossible to put in the grid
     CrosswordGen.wordsList.push_back("impossible");
     // possible good match
@@ -35,9 +35,7 @@ void test5x5(){
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
     // Output the time taken
-    std::cout << "Time taken by unittest: " << duration.count() << " microseconds" << std::endl;
-
-    std::cout << " SUCCESS." << std::endl;
+    std::cout << " Time taken by unittest: " << duration.count() << " microseconds." << std::endl;
 }
 
 int main(int argc, char *argv[])

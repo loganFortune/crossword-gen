@@ -4,6 +4,9 @@
     Date: 21/10/2023
 */
 
+#ifndef __UTILS_HPP
+#define __UTILS_HPP
+
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -75,3 +78,5 @@ std::ostream& operator<<(std::ostream& os, const Position& pos)
 
     return os;
 }
+
+#endif // __UTILS_HPP

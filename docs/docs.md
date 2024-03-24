@@ -18,7 +18,9 @@ _Database Table_:
 CREATE TABLE CLUEANSWER (
     CAId INTEGER PRIMARY KEY, -- Automatically increments
     Clue TEXT NOT NULL,
-    Answer TEXT -- Removed VARCHAR(32) for compatibility, but TEXT works fine
+    Answer TEXT, -- Removed VARCHAR(32) for compatibility, but TEXT works fine
+    Lang TEXT NOT NULL -- Eng = English / Fr = French / etc...
+
 );
 
 _Database Debug_:
@@ -34,7 +36,12 @@ Get some specific information about the tables:
 - Run `SELECT * FROM CLUEANSWER;`.
 
 Insert new data:
-- Run `INSERT INTO CLUEANSWER(Clue, Answer) VALUES('He is best known for the motoring programmes Top Gear.', 'Clarkson');`
+- Run `INSERT INTO CLUEANSWER(Clue, Answer, Lang) VALUES('He is best known for the motoring programmes Top Gear.', 'Clarkson', 'Eng');`.
+
+Modify table definition:
+- Run `ALTER TABLE CLUEANSWER ADD COLUMN level INTEGER DEFAULT 0;`.
+
+db-browser-for-sqlite is used to manage the db by the internal developers.
 
 ## Performance
 
@@ -49,43 +56,50 @@ _Important consideration_:
 
 #### Last Performance Results:
 
-Grid(5,5) x Words(5) = 118
-Grid(5,5) x Words(6) = 98
-Grid(5,5) x Words(7) = 95
-Grid(5,5) x Words(8) = 93
-Grid(5,5) x Words(9) = 113
-Grid(5,5) x Words(10) = 129
-Grid(5,5) x Words(11) = 151
-Grid(5,5) x Words(12) = 162
-Grid(5,5) x Words(13) = 181
-Grid(6,6) x Words(5) = 710
-Grid(6,6) x Words(6) = 941
-Grid(6,6) x Words(7) = 929
-Grid(6,6) x Words(8) = 1075
-Grid(6,6) x Words(9) = 1506
-Grid(6,6) x Words(10) = 1579
-Grid(6,6) x Words(11) = 1614
-Grid(6,6) x Words(12) = 1963
-Grid(6,6) x Words(13) = 1264
-Grid(7,7) x Words(5) = 6738
-Grid(7,7) x Words(6) = 12810
-Grid(7,7) x Words(7) = 12854
-Grid(7,7) x Words(8) = 17973
-Grid(7,7) x Words(9) = 25532
-Grid(7,7) x Words(10) = 32480
-Grid(7,7) x Words(11) = 40104
-Grid(7,7) x Words(12) = 49904
-Grid(7,7) x Words(13) = 57629
-Grid(8,8) x Words(5) = 123498
-Grid(8,8) x Words(6) = 426340
-Grid(8,8) x Words(7) = 443009
-Grid(8,8) x Words(8) = 817653
-Grid(8,8) x Words(9) = 1300524
-Grid(8,8) x Words(10) = 1776765
-Grid(8,8) x Words(11) = 2277623
-Grid(8,8) x Words(12) = 2748631
-Grid(8,8) x Words(13) = 3261543
+*Results in microseconds*
+
+Grid(5,5) x Words(5) = 47
+Grid(5,5) x Words(6) = 34
+Grid(5,5) x Words(7) = 44
+Grid(5,5) x Words(8) = 40
+Grid(5,5) x Words(9) = 55
+Grid(5,5) x Words(10) = 83
+Grid(5,5) x Words(11) = 115
+Grid(5,5) x Words(12) = 112
+Grid(5,5) x Words(13) = 110
+Grid(6,6) x Words(5) = 324
+Grid(6,6) x Words(6) = 453
+Grid(6,6) x Words(7) = 451
+Grid(6,6) x Words(8) = 513
+Grid(6,6) x Words(9) = 656
+Grid(6,6) x Words(10) = 784
+Grid(6,6) x Words(11) = 866
+Grid(6,6) x Words(12) = 1049
+Grid(6,6) x Words(13) = 1262
+Grid(7,7) x Words(5) = 6516
+Grid(7,7) x Words(6) = 15277
+Grid(7,7) x Words(7) = 13702
+Grid(7,7) x Words(8) = 19250
+Grid(7,7) x Words(9) = 28815
+Grid(7,7) x Words(10) = 35346
+Grid(7,7) x Words(11) = 43801
+Grid(7,7) x Words(12) = 54835
+Grid(7,7) x Words(13) = 60735
+Grid(8,8) x Words(5) = 140314
+Grid(8,8) x Words(6) = 469577
+Grid(8,8) x Words(7) = 481820
+Grid(8,8) x Words(8) = 874755
+Grid(8,8) x Words(9) = 1395391
+Grid(8,8) x Words(10) = 1893512
+Grid(8,8) x Words(11) = 2457898
+Grid(8,8) x Words(12) = 3176996
+Grid(8,8) x Words(13) = 3483068
 
 #### Comments
 
 We can notice a quite poor performance of the tool for grids size over 8x8.
+
+## Review
+
+This repo has used ChatGpt in order to _review_ the internal code. The following prompt has been used:
+`Can you review the following code to make sure it follows high standard C++ practice?`

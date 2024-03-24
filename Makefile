@@ -5,13 +5,15 @@
 .PHONY: all clean
 
 CXX = g++
-CXXFLAGS=-std=c++20 -O3
+CXXFLAGS=-std=c++20 -O3 -lsqlite3
 DEBUGFLAGS=-g -DDEBUGPRINT
 
-all: crosswordgen_print crosswordgen unittest runtest
+all: crosswordgen_print crosswordgen unittest db-management runtest capp runapp
 
 debug: CXXFLAGS += ${DEBUGFLAGS}
 debug: all
+
+app-compile: crosswordgen_print capp runapp
 
 perf: crosswordgen_print crosswordgen performance perf-test
 
@@ -30,14 +32,27 @@ performance: ./test/perf.cpp
 	@echo "- Compilation perf.cpp..."
 	${CXX} ${CXXFLAGS} -o perf -g $<
 
+db-management: ./src/dbtest.cpp
+	@echo "- Compile database management system..."
+	${CXX} ${CXXFLAGS} -o dbtest -g $<
+
+capp: ./src/app.cpp
+	@echo "- Compile App Algorithm..."
+	${CXX} ${CXXFLAGS} -o app -g $<
+
 runtest:
 	@echo "- Check compilation..."
 	./unittest
+	./dbtest
 
 perf-test:
 	@echo "- Performance test"
 	./perf
 
+runapp:
+	@echo "- Running App..."
+	./app
+
 clean:
 	@echo "Cleaning files."
-	rm -rf *.dSYM *.bkp crosswordgen unittest perf
+	rm -rf *.dSYM *.bkp crosswordgen unittest perf dbtest app

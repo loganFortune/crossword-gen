@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     assert(width < MAXGRIDSIDESIZE);
     assert(length < MAXGRIDSIDESIZE);
     GridSize gridSize{width,length};
-    CrosswordGen CrosswordGen(gridSize);
+    CrosswordGen CrosswordGen(gridSize, DEBUG_INPUT);
     CrosswordGen.run();
     return 0;
 }

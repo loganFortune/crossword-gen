@@ -5,10 +5,13 @@
 */
 
 #include "utils.hpp"
+#include <set>
+
+enum InputClass {DEBUG_INPUT, TEST_PERF_INPUT, APP_INPUT};
 
 class CrosswordGen {
 public:
-    CrosswordGen(const GridSize gridInfo, const bool manualInput = false);
+    CrosswordGen(const GridSize gridInfo, const InputClass manualInput);
     // Grid size
     GridSize gridInfo;
     // Path to the different words to be included
@@ -21,7 +24,7 @@ public:
     // Internal functions
     unsigned prune(std::shared_ptr<Graph> crosswordMaps, const unsigned topN = 3); // [HEURI-3]
     std::vector<WordPlace> getBestSolution(std::shared_ptr<Graph> crosswordMaps, const unsigned minimumTopSolution);
-    unsigned getMinimumTopN(std::shared_ptr<Graph> crosswordMaps, std::vector<unsigned>& vectTopN, const unsigned topN = 3);
+    unsigned getMinimumTopN(std::shared_ptr<Graph> crosswordMaps, std::set<unsigned>& vectTopN, const unsigned topN = 3);
     void removeBelowTopN(std::shared_ptr<Graph> crosswordMaps, const unsigned minimumTopN);
     void addWordsFromFile();
     bool iteratePosition(const unsigned sizeWord, Position& currentPos);
@@ -32,17 +35,17 @@ public:
     void printGraph(std::shared_ptr<Graph> graph, const unsigned topN = 0);
     void printCrosswordMap(GridMap* node);
     // Heuristics
-    unsigned computeScore(unsigned score, unsigned nbCrossing);
+    unsigned computeScore(const unsigned score, const unsigned nbCrossing);
 private:
     // [IMPROV-0] English dictionary
     std::vector<std::string> dict; // tbd
-    // unique id per node
+    // [IMPROV-3] Add parallel execution of graph processing
     static inline std::atomic<int> nextId{0};
 };
 
-CrosswordGen::CrosswordGen(const GridSize gridInfo, const bool manualInput){
+CrosswordGen::CrosswordGen(const GridSize gridInfo, const InputClass manualInput){
     this->gridInfo = gridInfo;
-    if (manualInput){
+    if (manualInput != DEBUG_INPUT){
         // don't add words from file - manually given by the test
         return;
     }
@@ -50,8 +53,12 @@ CrosswordGen::CrosswordGen(const GridSize gridInfo, const bool manualInput){
 }
 
 void CrosswordGen::addWordsFromFile(){
+    /*
+    [IMPROV-4] Error checking - try-catch
+    There's little error handling, particularly in this function. 
+    Robust error checking and exception handling is necessary.*/
     // Open words constraints
-    readWordsFile("./mylist.txt", wordsList);
+    readWordsFile("./database/mylist.txt", wordsList);
 #ifdef DEBUGPRINT
     std::cout << "Words that need to be included:" << std::endl;
     for (auto &c: wordsList){
@@ -81,6 +88,8 @@ void CrosswordGen::addWordNode(const std::string word, std::shared_ptr<Graph> cr
         return;
     }
     // - [IMPROV-2] Optimized matrix traversal
+    // Can we use pre-computing and/or caching?
+    // Evaluating `horizontalClash` and `verticalClash` can be optimized?
     for (unsigned x = 0; x < gridInfo.length; x++){
         // Optimised matrix traversal
         for (unsigned y  = 0; y < (x <= (gridInfo.length - sizeWord) ? gridInfo.width : gridInfo.width - sizeWord + 1); y++){
@@ -146,7 +155,7 @@ void CrosswordGen::addWordNode(const std::string word, std::shared_ptr<Graph> cr
     }
 }
 
-unsigned CrosswordGen::computeScore(unsigned score, unsigned nbCrossing){
+unsigned CrosswordGen::computeScore(const unsigned score, const unsigned nbCrossing){
     /* 
     [HEURI-2] 
     In order to create a satisfying crossword, 
@@ -192,7 +201,7 @@ void CrosswordGen::printGraph(std::shared_ptr<Graph> graph, const unsigned topN)
         }
     } else {
         // This is not a leaf node
-        for(auto node: graph->children){
+        for(const auto& node: graph->children){
             printGraph(node, topN);
         }
     }
@@ -204,7 +213,7 @@ void CrosswordGen::addWordGraph(const std::string word, std::shared_ptr<Graph> c
         addWordNode(word, crosswordMaps);
     } else {
         // This is not a leaf node
-        for(auto node: crosswordMaps->children){
+        for(const auto& node: crosswordMaps->children){
             addWordGraph(word, node);
         }
     }
@@ -217,45 +226,41 @@ unsigned CrosswordGen::prune(std::shared_ptr<Graph> crosswordMaps, const unsigne
     a solution that is locally optimal. We avoid to do too many 
     computation on graphs that seem to not give interesting results.
     */
-   std::vector<unsigned> vectTopN;
+   std::set<unsigned> vectTopN; // `std::set` or `std::priority_queue`
    unsigned minimumTopN = getMinimumTopN(crosswordMaps, vectTopN, topN);
    removeBelowTopN(crosswordMaps, minimumTopN);
    return minimumTopN;
 }
 
-void changeVectorTopN(std::vector<unsigned>& vectTopN, const unsigned score, const unsigned topN = 3){
-    bool inserted = false;
-    for (unsigned i = 0; i < vectTopN.size(); ++i)
-    {
-        if(score > vectTopN[i]){
-            vectTopN.insert(vectTopN.begin() + i, score);
-            inserted = true;
-            break;
+void changeVectorTopN(std::set<unsigned>& vectTopN, const unsigned score, const unsigned topN = 3){
+    if(vectTopN.size() < topN){
+        vectTopN.insert(score);
+    } else {
+        unsigned min_element = *(vectTopN.begin()); 
+        if(score > min_element){
+            vectTopN.erase(vectTopN.begin());
+            vectTopN.insert(score);
         }
-    }
-    if(vectTopN.size() < topN && !inserted){
-        vectTopN.push_back(score);
-    } else if (vectTopN.size() > topN){
-        vectTopN.pop_back();
     }
 }
 
-unsigned CrosswordGen::getMinimumTopN(std::shared_ptr<Graph> crosswordMaps, std::vector<unsigned>& vectTopN, const unsigned topN){
+unsigned CrosswordGen::getMinimumTopN(std::shared_ptr<Graph> crosswordMaps, std::set<unsigned>& vectTopN, const unsigned topN){
     if (crosswordMaps->children.size() == 0){
         // Top N mechanism
         changeVectorTopN(vectTopN, crosswordMaps->score, topN);
     } else {
         // This is not a leaf node
-        for(auto node: crosswordMaps->children){
+        for(const auto& node: crosswordMaps->children){
             getMinimumTopN(node, vectTopN, topN);
         }
     }
-    return vectTopN.back();
+    return *(vectTopN.begin()); ;
 }
 
 void CrosswordGen::removeBelowTopN(std::shared_ptr<Graph> crosswordMaps, const unsigned minimumTopN){
+    // erase the leaves first
     crosswordMaps->children.erase(std::remove_if(crosswordMaps->children.begin(), crosswordMaps->children.end(), [&minimumTopN](std::shared_ptr<Graph> g) { return (g->children.size() == 0) && (g->score < minimumTopN); }), crosswordMaps->children.end());
-    for(auto node: crosswordMaps->children){
+    for(const auto& node: crosswordMaps->children){
         removeBelowTopN(node, minimumTopN);
     }
 }
@@ -270,7 +275,7 @@ std::vector<WordPlace> CrosswordGen::getBestSolution(std::shared_ptr<Graph> cros
         }
     } else {
         // This is not a leaf node
-        for(auto node: crosswordMaps->children){
+        for(const auto& node: crosswordMaps->children){
             return getBestSolution(node, minimumTopSolution);
         }
     }
