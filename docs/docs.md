@@ -13,6 +13,7 @@ _Database Name_:
 sqlite> .databases
 main: ./CrosswordSolver/database/questions-answers.db r/w
 `
+
 _Database Table_:
 
 CREATE TABLE CLUEANSWER (
